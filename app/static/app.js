@@ -18,7 +18,8 @@
     healthController: null, requestController: null, closed: false
   };
   const MAX_LOGO_BYTES = 2 * 1024 * 1024;
-  const LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+  const LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
+  const PASTE_EXTENSIONS = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/webp': 'webp' };
   const ERROR_MESSAGES = {
     INVALID_URL: '链接格式不正确，请输入完整的 http 或 https 地址。',
     INVALID_LOGO: 'Logo 无法使用，请更换 PNG、JPEG 或 WebP 图片。',
@@ -102,7 +103,7 @@
     ui.generateArrow.hidden = busy;
     ui.submitNote.textContent = busy
       ? '正在离线编码并进行原生回读，请稍候…'
-      : state.failed ? '已保留输入内容，可修改后重试。' : '离线原生编码 · 不使用普通二维码替代';
+      : state.failed ? '已保留输入内容，可修改后重试。' : '离线原生编码 · Logo 可选 · 不使用普通二维码替代';
     updateSubmit();
   }
 
@@ -160,8 +161,18 @@
     });
   }
 
-  async function selectLogo(file) {
-    if (state.busy || !file) return;
+  // Clipboard bitmaps often arrive named "image.png"; give them a recognisable local name.
+  function namePastedFile(file) {
+    if (file.name && file.name !== 'image.png' && file.name !== 'blob') return file;
+    const extension = PASTE_EXTENSIONS[file.type] || 'png';
+    try {
+      return new File([file], '粘贴的图片.' + extension, { type: file.type || 'image/png', lastModified: Date.now() });
+    } catch { return file; }
+  }
+
+  async function selectLogo(source, origin = 'file') {
+    if (state.busy || !source) return;
+    const file = origin === 'paste' ? namePastedFile(source) : source;
     const version = ++state.logoVersion;
     if (state.logoJob) state.logoJob.cancel();
     releaseLogo();
@@ -170,7 +181,7 @@
     setFieldError('logo', '');
     state.validating = false;
     let message = '';
-    if (!LOGO_TYPES.has(file.type)) message = '请选择 PNG、JPEG 或 WebP 格式的图片，不支持 SVG、GIF 等格式。';
+    if (!LOGO_TYPES.has(file.type)) message = '请选择 PNG、JPEG 或 WebP 格式的图片（也支持直接粘贴截图），不支持 SVG、GIF 等格式。';
     else if (!file.size) message = '图片是空文件，请重新选择。';
     else if (file.size > MAX_LOGO_BYTES) message = '图片超过 2 MiB，请压缩后重新上传。';
     if (message) {
@@ -199,7 +210,8 @@
       ui.logoMeta.textContent = `${dimensions.width} × ${dimensions.height} px · ${Math.max(1, Math.round(file.size / 1024))} KiB`;
       ui.uploadEmpty.hidden = true;
       ui.logoPreview.hidden = false;
-      ui.logoAnnouncement.textContent = `Logo 已就绪：${file.name}`;
+      ui.logoAnnouncement.textContent = origin === 'paste'
+        ? '已从剪贴板添加 Logo：' + file.name : 'Logo 已就绪：' + file.name;
       if ([ui.chooseLogo, ui.logo, ui.replaceLogo].includes(document.activeElement)) ui.replaceLogo.focus();
     } catch (error) {
       if (state.closed || version !== state.logoVersion) return;
@@ -267,16 +279,15 @@
     clearFormError();
     const inputUrl = ui.url.value.trim();
     const urlError = validHttpUrl(inputUrl) ? '' : '请输入完整的 http 或 https 链接，例如 https://example.com。';
-    const logoError = state.file ? '' : '请先选择一张 Logo 图片。';
     setFieldError('url', urlError);
-    setFieldError('logo', logoError);
-    if (urlError || logoError) {
-      if (urlError) ui.url.focus(); else ui.chooseLogo.focus();
+    setFieldError('logo', '');
+    if (urlError) {
+      ui.url.focus();
       return;
     }
     const body = new FormData();
     body.append('url', inputUrl);
-    body.append('logo', state.file, state.file.name);
+    if (state.file) body.append('logo', state.file, state.file.name || 'logo.png');
     const controller = new AbortController();
     state.requestController = controller;
     let timedOut = false;
@@ -381,7 +392,7 @@
     clearFormError();
     setFieldError('logo', '');
     updateSubmit();
-    ui.logoAnnouncement.textContent = 'Logo 已移除，请重新选择图片。';
+    ui.logoAnnouncement.textContent = 'Logo 已移除，将生成不带 Logo 的葵花码。';
     ui.chooseLogo.focus();
   });
   ui.url.addEventListener('input', () => {
@@ -389,6 +400,31 @@
     setFieldError('url', '');
     clearFormError();
     clearResult(true);
+  });
+
+  function clipboardImage(event) {
+    const data = event.clipboardData;
+    if (!data) return null;
+    for (const item of Array.from(data.items || [])) {
+      if (item.kind !== 'file' || !item.type.startsWith('image/')) continue;
+      const file = item.getAsFile();
+      if (file) return file;
+    }
+    return Array.from(data.files || []).find((file) => file.type.startsWith('image/')) || null;
+  }
+
+  // Paste anywhere: screenshots are the common case, while text pastes in fields stay untouched.
+  document.addEventListener('paste', (event) => {
+    if (state.busy || state.closed) return;
+    const file = clipboardImage(event);
+    if (!file) return;
+    const active = document.activeElement;
+    const editing = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement ||
+      Boolean(active && active.isContentEditable);
+    const hasText = Array.from(event.clipboardData?.types || []).includes('text/plain');
+    if (editing && hasText) return;
+    event.preventDefault();
+    void selectLogo(file, 'paste');
   });
 
   let dragDepth = 0;

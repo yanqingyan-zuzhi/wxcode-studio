@@ -25,10 +25,10 @@ class StubGenerator:
     def check(self) -> None:
         pass
 
-    def generate(self, url: str, logo_png: bytes) -> GeneratedImage:
+    def generate(self, url: str, logo_png: bytes | None = None) -> GeneratedImage:
         if url.endswith("/long"):
             raise AppError("CAPACITY_EXCEEDED", "链接超过当前葵花码可用容量，请缩短链接后重试", 422)
-        assert logo_png.startswith(b"\x89PNG\r\n\x1a\n")
+        assert logo_png is None or logo_png.startswith(b"\x89PNG\r\n\x1a\n")
         return GeneratedImage(png=PNG, payload=self.payload)
 
 
@@ -71,10 +71,22 @@ def test_generate_returns_png_with_verification_headers(client: TestClient):
     assert "no-store" in response.headers["cache-control"]
 
 
-def test_invalid_url_and_missing_logo_return_stable_error_codes(client: TestClient):
+def test_invalid_url_returns_a_stable_error_code(client: TestClient):
     assert post(client, url="javascript:alert(1)").json()["error"]["code"] == "INVALID_URL"
+    response = client.post("/api/generate", data={"url": "javascript:alert(1)"})
+    assert response.status_code == 400 and response.json()["error"]["code"] == "INVALID_URL"
+
+
+def test_brand_logo_is_optional(client: TestClient):
     response = client.post("/api/generate", data={"url": "https://example.com/"})
-    assert response.status_code == 400 and response.json()["error"]["code"] == "INVALID_LOGO"
+    assert response.status_code == 200
+    assert response.content == PNG
+    assert response.headers["x-verification"] == "native-roundtrip"
+
+
+def test_empty_logo_upload_is_treated_as_absent(client: TestClient):
+    response = post(client, logo=b"")
+    assert response.status_code == 200 and response.content == PNG
 
 
 def test_capacity_error_is_reported_without_fake_image(client: TestClient):

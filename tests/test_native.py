@@ -39,3 +39,11 @@ def test_overlong_url_fails_without_returning_an_image(generator: Generator):
     with pytest.raises(AppError) as error:
         generator.generate("https://example.com/" + "a" * 400, logo)
     assert error.value.code == "CAPACITY_EXCEEDED"
+
+
+def test_generated_code_without_logo_roundtrips(generator: Generator, tmp_path: Path):
+    result = generator.generate("https://www.alipay.com/", None)
+    assert result.payload == "https://www.alipay.com/"
+    image = tmp_path / "code-no-logo.png"
+    image.write_bytes(result.png)
+    assert generator.decode(image) == b"https://www.alipay.com/"

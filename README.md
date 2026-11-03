@@ -1,10 +1,11 @@
 # 葵花码工坊
 
-输入网址、上传 Logo，离线生成带 Logo 的葵花码 PNG。
+输入网址，可选上传或粘贴 Logo，离线生成葵花码 PNG。
 
 <img src="examples/alipay.png" alt="生成示例" width="240">
 
 - **完全离线：** 不调用微信接口，不需要 AppID/AppSecret，生成过程禁止联网。
+- **Logo 可选：** 不传 Logo 也能生成；支持拖拽、选择文件，或直接粘贴截图。
 - **结果可靠：** 每张图都用原生解码器回读，链接完全一致才返回。
 - **不留数据：** 不保存上传内容和生成结果，也不做短链。
 
@@ -18,7 +19,7 @@
 docker compose up -d --build
 ```
 
-等 `docker compose ps` 显示 `(healthy)` 后，打开 <http://localhost:8000>，填入链接、上传 Logo，点击“生成”，即可预览并下载 600×600 的 PNG。
+等 `docker compose ps` 显示 `(healthy)` 后，打开 <http://localhost:8000>，填入链接（可上传或粘贴 Logo），点击“生成”，即可预览并下载 600×600 的 PNG。
 
 换端口：
 
@@ -50,9 +51,9 @@ curl -o code.png \
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/health` | 健康检查 |
-| POST | `/api/generate` | `multipart/form-data`，字段为 `url` 和 `logo`，成功返回 `image/png` |
+| POST | `/api/generate` | `multipart/form-data`，字段为 `url`（必填）和 `logo`（可选），成功返回 `image/png` |
 
-失败时返回 `{"error": {"code", "message"}}`：
+不传 `logo` 时生成不带 Logo 的葵花码。失败时返回 `{"error": {"code", "message"}}`：
 
 | 错误码 | 状态码 | 含义 |
 |---|---|---|
@@ -66,7 +67,7 @@ curl -o code.png \
 ## 使用限制
 
 - **链接：** 仅支持 http/https，最多 512 字节；实际可用容量更小，取决于链接内容。
-- **Logo：** PNG、JPEG 或 WebP 静态图，不超过 2 MiB，每边不超过 4096 像素。
+- **Logo（可选）：** PNG、JPEG 或 WebP 静态图，不超过 2 MiB，每边不超过 4096 像素；可在页面中直接粘贴截图。
 
 ## 测试
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="输入链接、上传 Logo，使用离线原生 WX_CODE 生成葵花码。">
+  <meta name="description" content="输入链接，可选上传或粘贴 Logo，使用离线原生 WX_CODE 生成葵花码。">
   <title>葵花码工坊 · 原生 WX_CODE</title>
   <link rel="stylesheet" href="/static/styles.css">
   <script src="/static/app.js" defer></script>
@@ -27,15 +27,15 @@
       <section class="intro" aria-labelledby="pageTitle">
         <p class="eyebrow">LOCAL TOOL / WX_CODE</p>
         <h1 id="pageTitle">让链接，带上你的标识。</h1>
-        <p class="intro-copy">输入网址，放入 Logo，生成一枚原生葵花码。<span>无需调用微信在线接口。</span></p>
+        <p class="intro-copy">输入网址，可选放入或粘贴 Logo，生成一枚原生葵花码。<span>无需调用微信在线接口。</span></p>
       </section>
 
       <div class="workspace">
         <section class="panel input-panel" aria-labelledby="inputTitle">
-          <div class="panel-heading"><div class="heading-group"><span class="step" aria-hidden="true">01</span><h2 id="inputTitle">设置内容</h2></div><span class="panel-caption">链接 + Logo</span></div>
+          <div class="panel-heading"><div class="heading-group"><span class="step" aria-hidden="true">01</span><h2 id="inputTitle">设置内容</h2></div><span class="panel-caption">链接 + Logo（可选）</span></div>
           <form id="generateForm" novalidate>
             <fieldset id="inputFields">
-              <legend class="sr-only">葵花码内容，链接与 Logo 均为必填</legend>
+              <legend class="sr-only">葵花码内容，链接必填，品牌 Logo 可选</legend>
               <div class="field-group">
                 <label class="field-label" for="url">目标链接 <span class="required-label">必填</span></label>
                 <div class="url-control"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m10 13 4-4m-6.5 7.5-1 1a4.24 4.24 0 0 1-6-6l4-4a4.24 4.24 0 0 1 6 0m3 0 1-1a4.24 4.24 0 0 1 6 6l-4 4a4.24 4.24 0 0 1-6 0" transform="translate(1 0)" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><input id="url" name="url" type="url" placeholder="https://example.com" required autocomplete="url" inputmode="url" spellcheck="false" autocapitalize="none" aria-describedby="urlHint urlError"></div>
@@ -44,13 +44,13 @@
               </div>
 
               <div class="field-group logo-field">
-                <label class="field-label" for="logo">品牌 Logo <span class="required-label">必填</span></label>
-                <input class="sr-only" id="logo" name="logo" type="file" accept="image/png,image/jpeg,image/webp" required tabindex="-1" aria-describedby="logoHint logoError">
+                <label class="field-label" for="logo">品牌 Logo <span class="optional-label">可选</span></label>
+                <input class="sr-only" id="logo" name="logo" type="file" accept="image/png,image/jpeg,image/webp" tabindex="-1" aria-describedby="logoHint logoError">
                 <div class="upload-zone" id="dropZone">
                   <div id="uploadEmpty" class="upload-empty">
                     <span class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><path d="m4 17 5-5 4 4 3-3 5 5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
-                    <p class="upload-title">拖拽 Logo 到这里</p>
-                    <p class="upload-subtitle">或从设备中选择一张图片</p>
+                    <p class="upload-title">拖拽或粘贴 Logo 到这里</p>
+                    <p class="upload-subtitle">截图后按 Ctrl / ⌘ + V，或从设备中选择图片</p>
                     <button class="button button-secondary choose-button" id="chooseLogo" type="button">选择图片 <span aria-hidden="true">↗</span></button>
                   </div>
                   <div class="logo-preview" id="logoPreview" hidden>
@@ -59,7 +59,7 @@
                     <span class="file-check" aria-label="图片校验通过">✓</span>
                   </div>
                 </div>
-                <p class="field-hint" id="logoHint">PNG / JPEG / WebP · 不超过 2 MiB · 最大 4096 × 4096 px</p>
+                <p class="field-hint" id="logoHint">可选 · 支持拖拽、选择文件或直接粘贴截图 · PNG / JPEG / WebP · 不超过 2 MiB · 最大 4096 × 4096 px</p>
                 <p class="field-error" id="logoError" hidden></p>
                 <p class="sr-only" id="logoAnnouncement" role="status"></p>
               </div>
@@ -68,7 +68,7 @@
               <button class="button button-primary" id="generateButton" type="submit"><span id="generateLabel">生成葵花码</span><span id="generateArrow" aria-hidden="true">→</span></button>
             </fieldset>
             <div class="form-feedback" id="formError" role="alert" hidden><strong id="errorTitle">未能生成</strong><p id="errorMessage"></p></div>
-            <p class="submit-note" id="submitNote" role="status">离线原生编码 · 不使用普通二维码替代</p>
+            <p class="submit-note" id="submitNote" role="status">离线原生编码 · Logo 可选 · 不使用普通二维码替代</p>
           </form>
         </section>
 
@@ -78,7 +78,7 @@
             <div class="empty-state" id="emptyState">
               <div class="empty-art" aria-hidden="true"><span class="art-sheet art-sheet-back"></span><span class="art-sheet art-sheet-front"><svg viewBox="0 0 48 48" fill="none"><path d="M24 35V19m0 6C12 27 10 17 12 11c8-1 14 3 12 14Zm0 5c-1-10 5-15 13-13 1 8-3 14-13 13Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
               <h3>一枚专属于你的葵花码</h3>
-              <p>添加链接与 Logo 后，<br>在这里预览并下载生成结果。</p>
+              <p>填入链接即可生成；<br>添加 Logo 会更容易辨认。</p>
               <span class="empty-spec">600 × 600 px <span>·</span> PNG</span>
             </div>
             <div class="loading-state" id="loadingState" hidden><span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span><h3>正在生成葵花码</h3><p>离线编码，并进行原生回读校验…<br>请稍候，不需要重复提交。</p></div>
@@ -96,6 +96,6 @@
     </main>
     <footer class="site-footer"><span>少一点步骤，多一份辨识。</span><span class="footer-tech">原生 WX_CODE <span aria-hidden="true">/</span> 本地运行</span></footer>
   </div>
-  <noscript><p class="noscript-note">此工具需要 JavaScript 来上传 Logo 和调用本地生成服务，请启用后重试。</p></noscript>
+  <noscript><p class="noscript-note">此工具需要 JavaScript 来上传或粘贴 Logo、调用本地生成服务，请启用后重试。</p></noscript>
 </body>
 </html>

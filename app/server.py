@@ -43,7 +43,7 @@ class BodyLimitMiddleware:
                 return
             body.extend(message.get("body", b""))
             if len(body) > MAX_REQUEST_BYTES:
-                await error_response(AppError("PAYLOAD_TOO_LARGE", "请求过大，Logo 最大为 2 MiB", 413))(scope, receive, send)
+                await error_response(AppError("PAYLOAD_TOO_LARGE", "请求过大，图片最大为 2 MiB", 413))(scope, receive, send)
                 return
             if not message.get("more_body", False):
                 break
@@ -90,9 +90,10 @@ def create_app(service: CodeService | None = None) -> FastAPI:
 
     @application.exception_handler(RequestValidationError)
     async def handle_validation(request: Request, error: RequestValidationError) -> JSONResponse:
-        missing_logo = any("logo" in item["loc"] for item in error.errors())
-        return error_response(AppError("INVALID_LOGO" if missing_logo else "INVALID_URL",
-                                       "请输入完整链接并上传 Logo 图片", 400))
+        locations = {item["loc"][-1] for item in error.errors()}
+        if "url" not in locations and "logo" in locations:
+            return error_response(AppError("INVALID_LOGO", "Logo 上传格式无效，请重新选择图片", 400))
+        return error_response(AppError("INVALID_URL", "请输入完整链接", 400))
 
     @application.get("/", include_in_schema=False)
     async def index() -> FileResponse:
@@ -104,7 +105,7 @@ def create_app(service: CodeService | None = None) -> FastAPI:
 
     @application.post("/api/generate")
     async def generate(request: Request, url: Annotated[str, Form()],
-                       logo: Annotated[UploadFile, File()]) -> Response:
+                       logo: Annotated[UploadFile | None, File()] = None) -> Response:
         payload = normalize_url(url)
         slot = request.app.state.slot
         try:
@@ -114,12 +115,14 @@ def create_app(service: CodeService | None = None) -> FastAPI:
             response.headers["Retry-After"] = "3"
             return response
         try:
-            raw = await logo.read(MAX_LOGO_BYTES + 1)
-            await logo.close()
+            raw = b""
+            if logo is not None:
+                raw = await logo.read(MAX_LOGO_BYTES + 1)
+                await logo.close()
             active: CodeService = request.app.state.generator
 
             def job() -> GeneratedImage:
-                prepared = prepare_logo(raw)
+                prepared = prepare_logo(raw) if raw else None
                 return active.generate(payload, prepared)
 
             task = asyncio.create_task(asyncio.to_thread(job))

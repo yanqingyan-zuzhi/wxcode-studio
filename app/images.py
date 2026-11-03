@@ -58,7 +58,7 @@ def _data_uri(data: bytes) -> str:
     return "data:image/png;base64," + base64.b64encode(data).decode("ascii")
 
 
-def embed_artwork(source: Path, destination: Path, badge: bytes, logo: bytes) -> None:
+def embed_artwork(source: Path, destination: Path, badge: bytes, logo: bytes | None = None) -> None:
     root = ET.fromstring(source.read_bytes())
     if root.tag != f"{{{SVG}}}svg" or root.get("width") != "600" or root.get("height") != "600":
         raise AppError("RUNTIME_ERROR", "原生生成器返回了未知图像格式", 503)
@@ -71,13 +71,15 @@ def embed_artwork(source: Path, destination: Path, badge: bytes, logo: bytes) ->
     root.insert(0, ET.Element(f"{{{SVG}}}rect", {
         "x": "0", "y": "0", "width": "600", "height": "600", "fill": "white",
     }))
-    definitions = ET.SubElement(root, f"{{{SVG}}}defs")
-    clip = ET.SubElement(definitions, f"{{{SVG}}}clipPath", {"id": "center-art-clip"})
-    ET.SubElement(clip, f"{{{SVG}}}circle", {"cx": "300", "cy": "300", "r": "130"})
-    ET.SubElement(root, f"{{{SVG}}}image", {
-        "x": "170", "y": "170", "width": "260", "height": "260",
-        "clip-path": "url(#center-art-clip)", f"{{{XLINK}}}href": _data_uri(logo),
-    })
+    # The brand logo is optional: without it the native artwork stays unobstructed.
+    if logo is not None:
+        definitions = ET.SubElement(root, f"{{{SVG}}}defs")
+        clip = ET.SubElement(definitions, f"{{{SVG}}}clipPath", {"id": "center-art-clip"})
+        ET.SubElement(clip, f"{{{SVG}}}circle", {"cx": "300", "cy": "300", "r": "130"})
+        ET.SubElement(root, f"{{{SVG}}}image", {
+            "x": "170", "y": "170", "width": "260", "height": "260",
+            "clip-path": "url(#center-art-clip)", f"{{{XLINK}}}href": _data_uri(logo),
+        })
     for image in root.iter(f"{{{SVG}}}image"):
         if not image.get(f"{{{XLINK}}}href", "").startswith("data:image/png;base64,"):
             raise AppError("RUNTIME_ERROR", "生成图像仍包含外部资源", 503)

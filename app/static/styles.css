@@ -64,6 +64,7 @@ fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
 .field-group { margin-bottom: 28px; min-width: 0; }
 .field-label { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
 .required-label { font-size: 10px; font-weight: 400; color: var(--muted); }
+.optional-label { font-size: 10px; font-weight: 400; line-height: 1.8; color: var(--muted); padding: 0 6px; border: 1px solid var(--line); border-radius: 999px; }
 .url-control { position: relative; }
 .url-control svg { position: absolute; top: 17px; left: 16px; width: 18px; height: 18px; color: #7f9084; pointer-events: none; }
 input[type="url"] { width: 100%; min-width: 0; border: 1px solid #d6ddd3; background: #fffefa; color: var(--ink); border-radius: var(--radius-control); padding: 14px 14px 14px 44px; height: 52px; font-size: 14px; transition: border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out); }
@@ -82,7 +83,7 @@ input:disabled { color: var(--muted); background: #f5f5ef; cursor: not-allowed; 
 .upload-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #eaf0e6; color: #5c7864; margin: 0 auto 12px; }
 .upload-icon svg { width: 24px; height: 24px; }
 .upload-title { font-size: 13px; font-weight: 500; }
-.upload-subtitle { margin-top: 4px; font-size: 11px; color: var(--muted); }
+.upload-subtitle { margin: 4px auto 0; max-width: 30em; font-size: 11px; color: var(--muted); }
 .button { display: inline-flex; justify-content: center; align-items: center; gap: 12px; min-height: 44px; border: 1px solid transparent; border-radius: var(--radius-control); font-size: 13px; font-weight: 500; line-height: 1.4; text-decoration: none; transition: background-color 120ms var(--ease-out), border-color 120ms var(--ease-out), transform 100ms var(--ease-out); }
 .button:active:not(:disabled) { transform: translateY(1px); }
 .button-secondary { padding: 8px 16px; background: var(--surface); border-color: #d9e1d5; }

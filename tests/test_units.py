@@ -129,3 +129,19 @@ def test_embed_artwork_keeps_native_modules_and_drops_remote_images(tmp_path):
     assert "https://example.invalid" not in text
     assert '<circle cx="150" cy="150" r="5" fill="black"' in text
     assert text.count("data:image/png;base64,") == 2
+
+
+def test_embed_artwork_without_logo_keeps_the_native_badge_only(tmp_path):
+    native = tmp_path / "native.svg"
+    native.write_text('<svg xmlns="http://www.w3.org/2000/svg" '
+                      'xmlns:xlink="http://www.w3.org/1999/xlink" width="600" height="600">'
+                      '<image xlink:href="https://example.invalid/badge.png"/>'
+                      '<circle cx="150" cy="150" r="5" fill="black"/></svg>')
+    badge = BytesIO()
+    Image.new("RGB", (64, 64), "green").save(badge, format="PNG")
+    output = tmp_path / "code.svg"
+    embed_artwork(native, output, badge.getvalue())
+    text = output.read_text()
+    assert "https://example.invalid" not in text
+    assert "center-art-clip" not in text
+    assert text.count("data:image/png;base64,") == 1

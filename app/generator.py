@@ -30,7 +30,7 @@ class GeneratedImage:
 
 class CodeService(Protocol):
     def check(self) -> None: ...
-    def generate(self, url: str, logo_png: bytes) -> GeneratedImage: ...
+    def generate(self, url: str, logo_png: bytes | None) -> GeneratedImage: ...
 
 
 class Generator:
@@ -90,7 +90,7 @@ class Generator:
         with tempfile.TemporaryDirectory(prefix="wxcode-read-", dir=self.temporary) as directory:
             return decode_payload(self._native(["decode", str(image.resolve())], Path(directory), models=True))
 
-    def generate(self, url: str, logo_png: bytes) -> GeneratedImage:
+    def generate(self, url: str, logo_png: bytes | None = None) -> GeneratedImage:
         payload = normalize_url(url)
         with tempfile.TemporaryDirectory(prefix="wxcode-", dir=self.temporary) as directory:
             work = Path(directory)
